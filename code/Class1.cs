@@ -14,7 +14,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace TurtAbilitySystem
+namespace TurtAbilitySystem // original name before Turtle Ability Loader :D
 {
     public abstract class turtabilitybase : Move
     {

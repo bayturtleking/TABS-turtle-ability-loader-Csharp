@@ -1,0 +1,21 @@
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+
+public class blinkforwardability : turtabilitybase
+{
+    public override float cooldown => 8f;
+    public override float range => 999f;
+    private float howfar_to_teleport = 10f; // how far forward it teleports
+    private float how_far_up = 1f; // set higher if unit gets teleported in ground a lot
+    private DataHandler dataofself;
+    public override void DoMove(Rigidbody weapon, Rigidbody enemytorso, DataHandler enemydata)
+    {
+        if ((object)dataofself == null)
+            dataofself = transform.root.GetComponentInChildren<DataHandler>();
+        if ((object)dataofself == null || dataofself.torso == null) return;
+        Vector3 where_to_teleport_to = dataofself.torso.position + dataofself.torso.forward * howfar_to_teleport;
+        where_to_teleport_to.y += how_far_up;
+        transform.root.position = where_to_teleport_to;
+    }
+}

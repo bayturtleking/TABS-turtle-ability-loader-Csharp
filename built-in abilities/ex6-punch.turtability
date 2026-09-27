@@ -1,0 +1,73 @@
+
+using System.Collections;
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+using DM;
+
+public class punchpeople : turtabilitybase
+{
+    public override float cooldown => 1.5f;
+	
+	
+    public override float range => 3.5f; // how close the closest unit has be on punch (is small since melee)
+    private float punch_damage = 12f; // how much dmg the punch do
+	
+	
+    private float knockback_force = 900f; // how far back punch pushes the bad people
+    private float knockback_upward = 150f; // how much of knockback_force makes it go up. makes the knockback look a bit better when it goes up.
+	
+    private DamageType type_of_punch = DamageType.Blunt; // default, piercing, blunt, or magic
+	
+    private float lengt_of_swing = 0.25f; // how long the pucnh animation takes
+    private float how_strong_swing = 220f; // how hard the hand moves in the animation/swing
+	
+	
+    private AnimationCurve curveofswing = AnimationCurve.EaseInOut(0f, 0.2f, 1f, 1f);
+    private DataHandler dataofself;
+    private Unit selfunit;
+
+    public override void DoMove(Rigidbody weapon, Rigidbody torso_of_enemy, DataHandler enemydata)
+    {
+        if ((object)dataofself == null)
+            dataofself = transform.root.GetComponentInChildren<DataHandler>();
+        if ((object)selfunit == null)
+            selfunit = transform.root.GetComponent<Unit>();
+        if ((object)dataofself == null || dataofself.torso == null) return;
+        if ((object)torso_of_enemy == null || enemydata == null) return; // no enemy close enough to punch
+        if (enemydata.team == dataofself.team) return; // dont punch your own team lol
+
+        Vector3 dirofpunc = torso_of_enemy.position - dataofself.torso.position;
+        if (dirofpunc.sqrMagnitude < 0.0001f) dirofpunc = dataofself.torso.forward;
+        dirofpunc.Normalize();
+
+        StartCoroutine(swingandpunch(torso_of_enemy, enemydata, dirofpunc));
+    }
+
+    private IEnumerator swingandpunch(Rigidbody torso_of_enemy, DataHandler enemydata, Vector3 dirofpunc)
+    {
+        Rigidbody armrig = dataofself.rightArm != null ? dataofself.rightArm.GetComponent<Rigidbody>() : null;
+        Rigidbody handrig = dataofself.rightHand != null ? dataofself.rightHand.GetComponent<Rigidbody>() : null;
+        float ttt = 0f;
+        while (ttt < lengt_of_swing)
+        {
+            float daforc = curveofswing.Evaluate(ttt / lengt_of_swing) * how_strong_swing;
+            if (armrig != null) armrig.AddForce(dirofpunc * daforc, ForceMode.Acceleration);
+            if (handrig != null) handrig.AddForce(dirofpunc * daforc, ForceMode.Acceleration);
+            ttt += Time.deltaTime;
+            yield return null;
+        }
+        if (!torso_of_enemy) yield break; // they mightve died or gotten yeeted away during the windup
+        HealthHandler healthofenemy = enemydata.transform.root.GetComponentInChildren<HealthHandler>();
+        if ((object)healthofenemy == null) yield break;
+        healthofenemy.TakeDamage(punch_damage, dirofpunc, selfunit, type_of_punch);
+        Vector3 getshoved = dirofpunc * knockback_force + Vector3.up * knockback_upward;
+        torso_of_enemy.AddForce(getshoved, ForceMode.Impulse);
+        onpunchhit(torso_of_enemy.gameObject, enemydata);
+    }
+
+    public void onpunchhit(GameObject hitobject, DataHandler hitunit)
+    {
+        // use to run custom code when the punch hits someone
+    }
+}

@@ -1,0 +1,19 @@
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+
+public class onewiththespaghetti : turtabilitybase
+{
+    public override float cooldown => 0f; // not needed for always on ability
+    public override float range => 0f; // not needed for always on ability
+    private float width = 0.1f; // how thin basically. 1 is normal unit width for most units
+    private void Update()
+    {
+        Vector3 scalecurrently = transform.root.localScale;
+        transform.root.localScale = new Vector3(width, scalecurrently.y, width);
+    }
+    public override void DoMove(Rigidbody weapon, Rigidbody enemytorso, DataHandler enemydata)
+    {
+        // not used
+    }
+}

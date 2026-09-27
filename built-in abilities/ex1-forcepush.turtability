@@ -1,0 +1,24 @@
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+
+public class forcepush : turtabilitybase
+{
+    public override float cooldown => 5f;
+    public override float range => 10f;
+    private float pushstrongnes = 60f;
+    private DataHandler dadada;
+    private void Awake()
+    {
+        dadada = transform.root.GetComponentInChildren<DataHandler>();
+    }
+    public override void DoMove(Rigidbody weapon, Rigidbody enemytorso, DataHandler enemydata)
+    {
+        if ((object)dadada == null || (object)dadada.torso == null) return;
+        if ((object)enemytorso == null) return;
+        var pushdirr = enemytorso.position - dadada.torso.position;
+        pushdirr.y = 0f;
+        if (pushdirr.sqrMagnitude < 0.001f) return;
+        enemytorso.velocity = pushdirr.normalized * pushstrongnes;
+    }
+}

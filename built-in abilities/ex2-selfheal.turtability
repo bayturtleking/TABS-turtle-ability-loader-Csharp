@@ -1,0 +1,24 @@
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+public class selfhealability : turtabilitybase
+{
+    public override float cooldown => 6f;
+
+    public override float range => 8f;
+
+    private float howmuchheall = 300f;
+
+    private DataHandler dadada;
+
+    private void Awake()
+    {
+        dadada = transform.root.GetComponentInChildren<DataHandler>();
+    }
+
+    public override void DoMove(Rigidbody weapon, Rigidbody enemytorso, DataHandler enemydata)
+    {
+        if ((object)dadada == null) return;
+        dadada.health = Mathf.Min(dadada.health + howmuchheall, dadada.maxHealth);
+    }
+}

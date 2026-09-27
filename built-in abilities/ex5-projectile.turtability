@@ -1,0 +1,88 @@
+
+using UnityEngine;
+using Landfall.TABS;
+using TurtAbilitySystem;
+using DM;
+
+public class projethrowa : turtabilitybase
+{
+    public override float cooldown => 6f;
+    public override float range => 20f; // how close the closest unit to attack must be
+
+    private string whatprojectile = "fireball"; // the name of the projectile. it uses the first found projectile to include this in the name
+    private float speed_at_launch = 25f; // how fast the projectile moves
+    private float how_farup = 1f; // how far up the projectile spawns (too law might get stuck in ground or in unit)
+    private DataHandler dataofself;
+    private GameObject projecfab_cached;
+    public override void DoMove(Rigidbody weapon, Rigidbody torso_of_enemy, DataHandler enemydata)
+    {
+        if ((object)dataofself == null)
+            dataofself = transform.root.GetComponentInChildren<DataHandler>();
+        if ((object)dataofself == null || dataofself.torso == null) return;
+        if ((object)torso_of_enemy == null) return; // no enemy found, nothing to launch at
+        if (enemydata != null && enemydata.team == dataofself.team) return;
+        if ((object)projecfab_cached == null)
+            projecfab_cached = findtheproje(whatprojectile);
+        if ((object)projecfab_cached == null) return;
+        Vector3 spawnpos = dataofself.torso.position + Vector3.up * how_farup;
+        Vector3 direction = torso_of_enemy.position - spawnpos;
+        if (direction.sqrMagnitude < 0.0001f) return;
+        direction.Normalize();
+        GameObject instance = Object.Instantiate(projecfab_cached, spawnpos, Quaternion.LookRotation(direction));
+        TeamHolder holder_team_thing = instance.GetComponent<TeamHolder>();
+        if (holder_team_thing == null) holder_team_thing = instance.AddComponent<TeamHolder>();
+        holder_team_thing.team = dataofself.team;
+        holder_team_thing.spawner = transform.root.gameObject;
+        holder_team_thing.target = torso_of_enemy;
+        MoveTransform movetransfo = instance.GetComponentInChildren<MoveTransform>();
+        if (movetransfo != null)
+            movetransfo.worldImpulse = direction * speed_at_launch;
+        waitforprojhit listener = instance.AddComponent<waitforprojhit>();
+        listener.ability = this;
+        listener.owner = transform.root.gameObject;
+    }
+	
+	
+    public void onprojectilehit(GameObject projectile, DataHandler hitunit)
+    {
+        // use this if you want to run custom code when the fireball/projectile hits something
+    }
+	
+	
+    private GameObject findtheproje(string namehas)
+    {
+        foreach (GameObject modelorprefa in ContentDatabase.Instance().LandfallContentDatabase.GetProjectiles())
+        {
+            if (modelorprefa == null) continue;
+            ProjectileEntity entity = modelorprefa.GetComponent<ProjectileEntity>();
+            string disname = entity != null ? entity.DisplayName : modelorprefa.name;
+            if (!string.IsNullOrEmpty(disname) && disname.ToLowerInvariant().Contains(namehas.ToLowerInvariant()))
+                return modelorprefa;
+        }
+        return null;
+    }
+}
+
+public class waitforprojhit : MonoBehaviour
+{
+    public projethrowa ability;
+    public GameObject owner;
+    private bool wasalreadyhit;
+    private void OnCollisionEnter(Collision collision)
+    {
+        checkhit(collision.collider);
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        checkhit(other);
+    }
+    private void checkhit(Collider other)
+    {
+        if (wasalreadyhit || ability == null) return;
+        DataHandler hitunit = other.GetComponentInParent<DataHandler>();
+        if (hitunit == null) return;
+        if (owner != null && hitunit.transform.root == owner.transform) return;
+        wasalreadyhit = true;
+        ability.onprojectilehit(gameObject, hitunit);
+    }
+}
